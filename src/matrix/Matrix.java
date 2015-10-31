@@ -9,7 +9,7 @@ public class Matrix {
     static final int SIZE_INCREMENT_PER_RUN = 5;
     static final int MINIMUM = 0;
     static final int MAXIMUM = 100;
-    static final int RUNS = 10;
+    static final int RUNS = 100;
     static final int TRIALS_PER_RUN = 10;
     
     /**
@@ -91,7 +91,7 @@ public class Matrix {
         //  For each run
         for (int i = 0; i < RUNS; i++){
             //  Find how long this run's size is going to be
-            sizes[i] = INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN;
+            sizes[i] = INITIAL_SIZE + i * SIZE_INCREMENT_PER_RUN;
 
             //  Track this run's splits
             times1[i] = 0;
@@ -127,9 +127,9 @@ public class Matrix {
         
         try {
             FileWriter writer = new FileWriter(outputFile);
-            writer.write(csvify(sizes));
-            writer.write(csvify(times1));
-            writer.write(csvify(times2));
+            writer.write("Size," + csvify(sizes) + "\n"
+                    + "Naive," + csvify(times1) + "\n"
+                    + "Strassen," + csvify(times2));
             writer.close();
         }
         catch(IOException e) {
@@ -148,7 +148,7 @@ public class Matrix {
         return str;
     }
     public static void main(String[] args) {
-        //runTrials("output.csv");
+        runTrials("output.csv");
         
         //  Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
