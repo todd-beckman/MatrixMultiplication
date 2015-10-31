@@ -108,17 +108,19 @@ public class Matrix {
                 int[][] matrixB2 = copyMatrix(matrixB1);
                 
                 //  Time the first method
-                int start1 = (int)System.currentTimeMillis();
+                long start1 = System.currentTimeMillis();
                 multiplyNaive(matrixA1, matrixB1);
-                int end1 = (int)System.currentTimeMillis();
-                times1[i] += end1 - start1;
+                long end1 = System.currentTimeMillis();
+                times1[i] += (int) (end1 - start1);
                 
                 //  Time the second method
-                int start2 = (int)System.currentTimeMillis();
+                long start2 = System.currentTimeMillis();
                 multiplyStassen(matrixA2, matrixB2);
-                int end2 = (int)System.currentTimeMillis();
-                times2[i] += end2 - start2;
+                long end2 = System.currentTimeMillis();
+                times2[i] += (int) (end2 - start2);
             }
+            
+            //  Find the average time per trial
             times1[i] /= TRIALS_PER_RUN;
             times2[i] /= TRIALS_PER_RUN;
         }
