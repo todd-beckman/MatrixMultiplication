@@ -20,7 +20,7 @@ public class Matrix {
      */
     public static int[][] multiplyNaive(int[][] matrix1, int[][] matrix2) {
         //  TODO: Not yet implemented
-        return null;
+        return matrix1;
     }
     /**
      * Multiplies two matrices together using the Stassen method.
@@ -78,9 +78,13 @@ public class Matrix {
         int[][][] allMatrixB1 = new int[RUNS][][];
         int[][][] allMatrixA2 = new int[RUNS][][];
         int[][][] allMatrixB2 = new int[RUNS][][];
+        //  Make a list of the sizes of each run
+        int[] sizes = new int[RUNS];
         for (int i = 0; i < RUNS; i++) {
-            allMatrixA1[i] = generateMatrix(INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN, MINIMUM, MAXIMUM);
-            allMatrixB1[i] = generateMatrix(INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN, MINIMUM, MAXIMUM);
+            sizes[i] = INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN;
+            
+            allMatrixA1[i] = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
+            allMatrixB1[i] = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
             
             //  Copy the matrices to enforce the same input to each method
             allMatrixA2[i] = copyMatrix(allMatrixA1[i]);
@@ -88,31 +92,43 @@ public class Matrix {
         }
         //  Keep track of the times for each run
         //  One set of times per method
-        long[] times1 = new long[RUNS];
-        long[] times2 = new long[RUNS];
+        int[] times1 = new int[RUNS];
+        int[] times2 = new int[RUNS];
         for (int i = 0; i < RUNS; i++){
             //  Time the first method
-            long start1 = System.currentTimeMillis();
+            int start1 = (int)System.currentTimeMillis();
             multiplyNaive(allMatrixA1[i], allMatrixB1[i]);
-            long end1 = System.currentTimeMillis();
+            int end1 = (int)System.currentTimeMillis();
             times1[i] = end1 - start1;
             
             //  Time the second method
-            long start2 = System.currentTimeMillis();
+            int start2 = (int)System.currentTimeMillis();
             multiplyStassen(allMatrixA2[i], allMatrixB2[i]);
-            long end2 = System.currentTimeMillis();
+            int end2 = (int)System.currentTimeMillis();
             times2[i] = end2 - start2;
         }
         
         try {
             FileWriter writer = new FileWriter(outputFile);
-            //  TODO: not yet implemented
+            writer.write(csvify(sizes));
+            writer.write(csvify(times1));
+            writer.write(csvify(times2));
+            writer.close();
         }
         catch(IOException e) {
-            //  My suggestion for this:
-            //  System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
-            //  TODO: not yet implemented
+            System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
+            System.out.println("Sizes per run:  " + csvify(sizes));
+            System.out.println("Method 1 times: " + csvify(sizes));
+            System.out.println("Method 2 times: " + csvify(sizes));
         }
+    }
+    private static String csvify(int[] arr) {
+        String str = "";
+        for (int i = 0; i < arr.length - 1; i++) {
+            str += arr[i] + ",";
+        }
+        str += arr[arr.length - 1];
+        return str;
     }
     public static void main(String[] args) {
         //runTrials();
