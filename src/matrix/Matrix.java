@@ -29,7 +29,7 @@ public class Matrix {
      * @param matrix2 The second matrix to multiply
      * @return The result of the multiplication
      */
-    public static int[][] multiplyStassen(int[][] matrix1, int[][] matrix2) {
+    public static int[][] multiplyStrassen(int[][] matrix1, int[][] matrix2) {
         //  TODO: Not yet implemented
         return matrix1;
     }
@@ -115,7 +115,7 @@ public class Matrix {
                 
                 //  Time the second method
                 long start2 = System.currentTimeMillis();
-                multiplyStassen(matrixA2, matrixB2);
+                multiplyStrassen(matrixA2, matrixB2);
                 long end2 = System.currentTimeMillis();
                 times2[i] += (int) (end2 - start2);
             }
@@ -148,7 +148,7 @@ public class Matrix {
         return str;
     }
     public static void main(String[] args) {
-        //runTrials("output.csv");
+        runTrials("output.csv");
         
         //  Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
