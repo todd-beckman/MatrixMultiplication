@@ -1,6 +1,5 @@
 package matrix;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
@@ -11,6 +10,7 @@ public class Matrix {
     static final int MINIMUM = 0;
     static final int MAXIMUM = 100;
     static final int RUNS = 10;
+    static final int TRIALS_PER_RUN = 10;
     
     /**
      * Multiplies two matrices together using the naive approach.
@@ -22,6 +22,7 @@ public class Matrix {
         //  TODO: Not yet implemented
         return matrix1;
     }
+    
     /**
      * Multiplies two matrices together using the Stassen method.
      * @param matrix1 The first matrix to multiply
@@ -30,8 +31,9 @@ public class Matrix {
      */
     public static int[][] multiplyStassen(int[][] matrix1, int[][] matrix2) {
         //  TODO: Not yet implemented
-        return null;
+        return matrix1;
     }
+    
     /**
      * Builds a square matrix of size nxn filled with components randomly between min and max
      * @param n The edge length
@@ -48,6 +50,7 @@ public class Matrix {
         }
         return matrix;
     }
+    
     /**
      * Produces a copy of a matrix. Fails if the input matrix is not square.
      * @param matrix The matrix to be copied
@@ -60,6 +63,7 @@ public class Matrix {
         }
         return matrix2;
     }
+    
     /**
      * Prints the contents of a matrix to the console.
      * @param matrix The matrix to be printed
@@ -70,42 +74,53 @@ public class Matrix {
         }
         System.out.println();
     }
+    
+    /**
+     * Runs a number of trials, averaging trials per run, with each run increasing the sizes of the input matrices.
+     * @param outputFile
+     */
     public static void runTrials(String outputFile) {
-        //  Generate all of the trials ahead of time
-        //  Two of each required to keep input of each method consistent
-        //  Multiplying Ai * Bi
-        int[][][] allMatrixA1 = new int[RUNS][][];
-        int[][][] allMatrixB1 = new int[RUNS][][];
-        int[][][] allMatrixA2 = new int[RUNS][][];
-        int[][][] allMatrixB2 = new int[RUNS][][];
         //  Make a list of the sizes of each run
         int[] sizes = new int[RUNS];
-        for (int i = 0; i < RUNS; i++) {
-            sizes[i] = INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN;
-            
-            allMatrixA1[i] = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
-            allMatrixB1[i] = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
-            
-            //  Copy the matrices to enforce the same input to each method
-            allMatrixA2[i] = copyMatrix(allMatrixA1[i]);
-            allMatrixB2[i] = copyMatrix(allMatrixB1[i]);
-        }
+
         //  Keep track of the times for each run
         //  One set of times per method
         int[] times1 = new int[RUNS];
         int[] times2 = new int[RUNS];
+        
+        //  For each run
         for (int i = 0; i < RUNS; i++){
-            //  Time the first method
-            int start1 = (int)System.currentTimeMillis();
-            multiplyNaive(allMatrixA1[i], allMatrixB1[i]);
-            int end1 = (int)System.currentTimeMillis();
-            times1[i] = end1 - start1;
+            //  Find how long this run's size is going to be
+            sizes[i] = INITIAL_SIZE + RUNS * SIZE_INCREMENT_PER_RUN;
+
+            //  Track this run's splits
+            times1[i] = 0;
+            times2[i] = 0;
             
-            //  Time the second method
-            int start2 = (int)System.currentTimeMillis();
-            multiplyStassen(allMatrixA2[i], allMatrixB2[i]);
-            int end2 = (int)System.currentTimeMillis();
-            times2[i] = end2 - start2;
+            //  For each trial
+            for (int j = 0; j < TRIALS_PER_RUN; j++) {
+                //  Generate all of the trials ahead of time
+                //  Two of each required to keep input of each method consistent
+                //  Multiplying Ai * Bi
+                int[][] matrixA1 = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
+                int[][] matrixB1 = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
+                int[][] matrixA2 = copyMatrix(matrixA1);
+                int[][] matrixB2 = copyMatrix(matrixB1);
+                
+                //  Time the first method
+                int start1 = (int)System.currentTimeMillis();
+                multiplyNaive(matrixA1, matrixB1);
+                int end1 = (int)System.currentTimeMillis();
+                times1[i] += end1 - start1;
+                
+                //  Time the second method
+                int start2 = (int)System.currentTimeMillis();
+                multiplyStassen(matrixA2, matrixB2);
+                int end2 = (int)System.currentTimeMillis();
+                times2[i] += end2 - start2;
+            }
+            times1[i] /= TRIALS_PER_RUN;
+            times2[i] /= TRIALS_PER_RUN;
         }
         
         try {
@@ -131,7 +146,7 @@ public class Matrix {
         return str;
     }
     public static void main(String[] args) {
-        //runTrials();
+        //runTrials("output.csv");
         
         //  Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
