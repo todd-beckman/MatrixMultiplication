@@ -59,7 +59,7 @@ public class Matrix {
     public static int[][] copyMatrix(int[][] matrix) {
         int[][] matrix2 = new int[matrix.length][matrix[0].length];
         for (int i = 0; i < matrix.length; i++) {
-            Arrays.copyOf(matrix[i], matrix[i].length);
+            matrix2[i] = Arrays.copyOf(matrix[i], matrix[i].length);
         }
         return matrix2;
     }
