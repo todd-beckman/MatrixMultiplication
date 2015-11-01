@@ -19,10 +19,63 @@ public class Matrix {
      * @return The result of the multiplication
      */
     public static int[][] multiplyNaive(int[][] matrix1, int[][] matrix2) {
-        //  TODO: Not yet implemented
-        return matrix1;
+        //check to ensure that both matricies are nxn
+    	int n = matrix1.length;
+    	if(matrix1[0].length != n ||matrix2.length != n ||matrix2[0].length != n){
+    		System.out.println("invalid input");
+    		return matrix1;
+    	}
+    	
+    	int[][] returnMatrix = new int[n][n];
+    	
+    	for(int i = 0; i<n; i++){
+    		for(int j = 0; j<n; j++){
+    			for(int k = 0; k<n; k++){
+    				returnMatrix[i][j] += matrix1[i][k]*matrix2[k][j];
+    			}
+    		}
+    	}
+    	return returnMatrix;
     }
-    
+    public static int[][] multiplyNaive2(int[][] matrix1, int[][] matrix2){
+        //check to ensure that both matricies are nxn
+    	int n = matrix1.length;
+    	if(matrix1[0].length != n ||matrix2.length != n ||matrix2[0].length != n){
+    		System.out.println("invalid input");
+    		return matrix1;
+    	}
+    	int[] sum;
+    	if(n%2 == 0){
+			sum = new int[n/2];
+		}
+		else{
+			sum = new int[(n/2)+1];
+		}
+    	
+    	int[][] returnMatrix = new int[n][n];
+    	
+    	for(int i = 0; i<n; i++){
+    		for(int j = 0; j<n; j++){
+    			for(int k = 0; k<sum.length; k++){
+    				if(k!=n-k-1){
+    					sum[k] = matrix1[i][k]*matrix2[k][j]+matrix1[i][n-k-1]*matrix2[n-k-1][j];
+    				}
+    				else{
+    					sum[k] = matrix1[i][k]*matrix2[k][j];
+    				}
+    			}
+    			for(int counter = sum.length-1; counter>0; counter = counter/2){
+    				for(int k = 0; k<counter; k++){
+    					if(k!= counter-k){
+    						sum[k] += sum[counter-k];
+    					}
+    				}
+    			}
+    			returnMatrix[i][j] = sum[0];
+    		}
+    	}
+    	return returnMatrix;
+    }
     /**
      * Multiplies two matrices together using the Stassen method.
      * @param matrix1 The first matrix to multiply
@@ -148,7 +201,7 @@ public class Matrix {
         return str;
     }
     public static void main(String[] args) {
-        runTrials("output.csv");
+        //runTrials("output.csv");
         
         //  Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
@@ -156,5 +209,6 @@ public class Matrix {
         printMatrix(matrixA);
         printMatrix(matrixB);
         printMatrix(multiplyNaive(matrixA, matrixB));
+        printMatrix(multiplyNaive2(matrixA, matrixB));
     }
 }
