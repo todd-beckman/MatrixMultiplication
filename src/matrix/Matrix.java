@@ -7,106 +7,73 @@ import java.util.Arrays;
 public class Matrix {
     static final int INITIAL_SIZE = 5;
     static final int SIZE_INCREMENT_PER_RUN = 5;
-    static final int MINIMUM = 0;
-    static final int MAXIMUM = 100;
+    static final int MINIMUM = -10;
+    static final int MAXIMUM = 10;
     static final int RUNS = 100;
     static final int TRIALS_PER_RUN = 10;
-    
+
     /**
      * Multiplies two matrices together using the naive approach.
-     * @param matrix1 The first matrix to multiply
-     * @param matrix2 The second matrix to multiply
+     * 
+     * @param matrix1
+     *            The first matrix to multiply
+     * @param matrix2
+     *            The second matrix to multiply
      * @return The result of the multiplication
      */
     public static int[][] multiplyNaive(int[][] matrix1, int[][] matrix2) {
-        //check to ensure that both matricies are nxn
-    	int n = matrix1.length;
-    	if(matrix1[0].length != n ||matrix2.length != n ||matrix2[0].length != n){
-    		System.out.println("invalid input");
-    		return matrix1;
-    	}
-    	
-    	int[][] returnMatrix = new int[n][n];
-    	
-    	for(int i = 0; i<n; i++){
-    		for(int j = 0; j<n; j++){
-    			for(int k = 0; k<n; k++){
-    				returnMatrix[i][j] += matrix1[i][k]*matrix2[k][j];
-    			}
-    		}
-    	}
-    	return returnMatrix;
+        int[][] returnMatrix = new int[matrix1.length][matrix1.length];
+        for (int i = 0; i < matrix1.length; i++) {
+            for (int j = 0; j < matrix1.length; j++) {
+                for (int k = 0; k < matrix1.length; k++) {
+                    returnMatrix[i][j] += matrix1[i][k] * matrix2[k][j];
+                }
+            }
+        }
+        return returnMatrix;
     }
-    public static int[][] multiplyNaive2(int[][] matrix1, int[][] matrix2){
-        //check to ensure that both matricies are nxn
-    	int n = matrix1.length;
-    	if(matrix1[0].length != n ||matrix2.length != n ||matrix2[0].length != n){
-    		System.out.println("invalid input");
-    		return matrix1;
-    	}
-    	int[] sum;
-    	if(n%2 == 0){
-			sum = new int[n/2];
-		}
-		else{
-			sum = new int[(n/2)+1];
-		}
-    	
-    	int[][] returnMatrix = new int[n][n];
-    	
-    	for(int i = 0; i<n; i++){
-    		for(int j = 0; j<n; j++){
-    			for(int k = 0; k<sum.length; k++){
-    				if(k!=n-k-1){
-    					sum[k] = matrix1[i][k]*matrix2[k][j]+matrix1[i][n-k-1]*matrix2[n-k-1][j];
-    				}
-    				else{
-    					sum[k] = matrix1[i][k]*matrix2[k][j];
-    				}
-    			}
-    			for(int counter = sum.length-1; counter>0; counter = counter/2){
-    				for(int k = 0; k<counter; k++){
-    					if(k!= counter-k){
-    						sum[k] += sum[counter-k];
-    					}
-    				}
-    			}
-    			returnMatrix[i][j] = sum[0];
-    		}
-    	}
-    	return returnMatrix;
-    }
+
     /**
      * Multiplies two matrices together using the Stassen method.
-     * @param matrix1 The first matrix to multiply
-     * @param matrix2 The second matrix to multiply
+     * 
+     * @param matrix1
+     *            The first matrix to multiply
+     * @param matrix2
+     *            The second matrix to multiply
      * @return The result of the multiplication
      */
     public static int[][] multiplyStrassen(int[][] matrix1, int[][] matrix2) {
-        //  TODO: Not yet implemented
+        // TODO: Not yet implemented
         return matrix1;
     }
-    
+
     /**
-     * Builds a square matrix of size nxn filled with components randomly between min and max
-     * @param n The edge length
-     * @param min The minimum inclusive of each cell
-     * @param max The maximum exclusive of each cell
+     * Builds a square matrix of size nxn filled with components randomly
+     * between min and max
+     * 
+     * @param n
+     *            The edge length
+     * @param min
+     *            The minimum inclusive of each cell
+     * @param max
+     *            The maximum exclusive of each cell
      * @return
      */
     public static int[][] generateMatrix(int n, int min, int max) {
         int[][] matrix = new int[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                matrix[i][j] = (int)(Math.random() * max) + min;
+                matrix[i][j] = (int) (Math.random() * max) + min;
             }
         }
         return matrix;
     }
-    
+
     /**
      * Produces a copy of a matrix. Fails if the input matrix is not square.
-     * @param matrix The matrix to be copied
+     * 
+     * @param matrix
+     *            The matrix to be copied
      * @return A copy matrix
      */
     public static int[][] copyMatrix(int[][] matrix) {
@@ -116,10 +83,12 @@ public class Matrix {
         }
         return matrix2;
     }
-    
+
     /**
      * Prints the contents of a matrix to the console.
-     * @param matrix The matrix to be printed
+     * 
+     * @param matrix
+     *            The matrix to be printed
      */
     public static void printMatrix(int[][] matrix) {
         for (int i = 0; i < matrix.length; i++) {
@@ -127,71 +96,68 @@ public class Matrix {
         }
         System.out.println();
     }
-    
+
     /**
-     * Runs a number of trials, averaging trials per run, with each run increasing the sizes of the input matrices.
+     * Runs a number of trials, averaging trials per run, with each run
+     * increasing the sizes of the input matrices.
+     * 
      * @param outputFile
      */
     public static void runTrials(String outputFile) {
-        //  Make a list of the sizes of each run
+        // Make a list of the sizes of each run
         int[] sizes = new int[RUNS];
 
-        //  Keep track of the times for each run
-        //  One set of times per method
+        // Keep track of the times for each run
+        // One set of times per method
         int[] times1 = new int[RUNS];
         int[] times2 = new int[RUNS];
-        
-        //  For each run
-        for (int i = 0; i < RUNS; i++){
-            //  Find how long this run's size is going to be
+
+        // For each run
+        for (int i = 0; i < RUNS; i++) {
+            // Find how long this run's size is going to be
             sizes[i] = INITIAL_SIZE + i * SIZE_INCREMENT_PER_RUN;
 
-            //  Track this run's splits
+            // Track this run's splits
             times1[i] = 0;
             times2[i] = 0;
-            
-            //  For each trial
+
+            // For each trial
             for (int j = 0; j < TRIALS_PER_RUN; j++) {
-                //  Generate all of the trials ahead of time
-                //  Two of each required to keep input of each method consistent
-                //  Multiplying Ai * Bi
-                int[][] matrixA1 = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
-                int[][] matrixB1 = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
-                int[][] matrixA2 = copyMatrix(matrixA1);
-                int[][] matrixB2 = copyMatrix(matrixB1);
-                
-                //  Time the first method
+                // Generate matrices to be multiplied
+                int[][] matrixA = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
+                int[][] matrixB = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
+
+                // Time the first method
                 long start1 = System.currentTimeMillis();
-                multiplyNaive(matrixA1, matrixB1);
+                multiplyNaive(matrixA, matrixB);
                 long end1 = System.currentTimeMillis();
                 times1[i] += (int) (end1 - start1);
-                
-                //  Time the second method
+
+                // Time the second method
                 long start2 = System.currentTimeMillis();
-                multiplyStrassen(matrixA2, matrixB2);
+                multiplyStrassen(matrixA, matrixB);
                 long end2 = System.currentTimeMillis();
                 times2[i] += (int) (end2 - start2);
             }
-            
-            //  Find the average time per trial
+
+            // Find the average time per trial
             times1[i] /= TRIALS_PER_RUN;
             times2[i] /= TRIALS_PER_RUN;
         }
-        
+
         try {
             FileWriter writer = new FileWriter(outputFile);
-            writer.write("Size," + csvify(sizes) + "\n"
-                    + "Naive," + csvify(times1) + "\n"
-                    + "Strassen," + csvify(times2));
+            writer.write(
+                    "Size," + csvify(sizes) + "\n" + "Naive," + csvify(times1) + "\n" + "Strassen," + csvify(times2));
             writer.close();
-        }
-        catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
             System.out.println("Sizes per run:  " + csvify(sizes));
             System.out.println("Method 1 times: " + csvify(sizes));
             System.out.println("Method 2 times: " + csvify(sizes));
         }
     }
+
     private static String csvify(int[] arr) {
         String str = "";
         for (int i = 0; i < arr.length - 1; i++) {
@@ -200,15 +166,15 @@ public class Matrix {
         str += arr[arr.length - 1];
         return str;
     }
+
     public static void main(String[] args) {
-        //runTrials("output.csv");
-        
-        //  Test environment first
+        // runTrials("output.csv");
+
+        // Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
         int[][] matrixB = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
         printMatrix(matrixA);
         printMatrix(matrixB);
         printMatrix(multiplyNaive(matrixA, matrixB));
-        printMatrix(multiplyNaive2(matrixA, matrixB));
     }
 }
