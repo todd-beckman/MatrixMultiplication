@@ -53,7 +53,7 @@ public class Matrix {
         int[][] M1 = multiplyNaive(add(matrix1, 0, 0, matrix2, n / 2, n / 2), add(matrix2, 0, 0, matrix2, n / 2, n / 2));
 //
 //      M2 = mult(add(X21, X22), Y11);
-        int[][] M2 = multiplyNaive(add(matrix1, n / 2, 0, matrix1, n / 2, n / 2), matrix2, 0, 0); // pretty sure split is needed
+        int[][] M2 = multiplyNaive(add(matrix1, n / 2, 0, matrix1, n / 2, n / 2), matrix2, 0, 0);
 
 //      M3 = mult(X11, sub(Y12, Y22));
         int[][] M3 = multiplyNaive(matrix1, 0, 0, sub(matrix2, 0, n / 2, matrix2, n / 2, n / 2));
@@ -74,24 +74,26 @@ public class Matrix {
         return matrix1;
     }
 
-
     /**
      * Both entire NxN matrices are passed in.  The passed in i's and j's are
      * the beginning of one of the four quadrants (e.g. 0,0; 0,n/2; n/2,0; or n/2,n/2).
      *
      * @param matrix1 the first matrix to add
-     * @param i1 the starting i value for matrix1
-     * @param j1 the starting j value for matrix1
+     * @param i1      the starting i value for matrix1
+     * @param j1      the starting j value for matrix1
      * @param matrix2 the second matrix to add
-     * @param i2 the starting i value for matrix2
-     * @param j2 the starting i value for matrix2
+     * @param i2      the starting i value for matrix2
+     * @param j2      the starting i value for matrix2
      **/
     public static int[][] add(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
+        // TODO: run som manual tests on this method to verify its correctness
         int n = matrix1.length;
         int[][] result = new int[n / 2][n / 2];
-        for (int i = 0; i1 < (i1 + n / 2); i++)
-            for (int j = 0; j1 < (j1 + n / 2); j++)
-                result[i][j] = matrix1[i1+i][j1+j] + matrix2[i2+i][j2+j];
+        for (int i = 0; i1 < (i1 + n / 2); i++) {
+            for (int j = 0; j1 < (j1 + n / 2); j++) {
+                result[i][j] = matrix1[i1 + i][j1 + j] + matrix2[i2 + i][j2 + j];
+            }
+        }
         return result;
     }
 
@@ -100,18 +102,21 @@ public class Matrix {
      * the beginning of one of the four quadrants (e.g. 0,0; 0,n/2; n/2,0; or n/2,n/2).
      *
      * @param matrix1 the first matrix to subtract
-     * @param i1 the starting i value for matrix1
-     * @param j1 the starting j value for matrix1
+     * @param i1      the starting i value for matrix1
+     * @param j1      the starting j value for matrix1
      * @param matrix2 the second matrix to subtract
-     * @param i2 the starting i value for matrix2
-     * @param j2 the starting i value for matrix2
+     * @param i2      the starting i value for matrix2
+     * @param j2      the starting i value for matrix2
      **/
     public static int[][] sub(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
+        // TODO: run som manual tests on this method to verify its correctness
         int n = matrix1.length;
         int[][] result = new int[n / 2][n / 2];
-        for (int i = 0; i1 < (i1 + n / 2); i++)
-            for (int j = 0; j1 < (j1 + n / 2); j++)
-                result[i][j] = matrix1[i1+i][j1+j] + matrix2[i2+i][j2+j];
+        for (int i = 0; i1 < (i1 + n / 2); i++) {
+            for (int j = 0; j1 < (j1 + n / 2); j++) {
+                result[i][j] = matrix1[i1 + i][j1 + j] + matrix2[i2 + i][j2 + j];
+            }
+        }
         return result;
     }
 
