@@ -41,7 +41,6 @@ public class Matrix {
     public static int[][] multiplyStrassen(int[][] matrix1, int[][] matrix2) {
         // TODO: augment multiplyNaive or make a new multiply method to take in starting i and j values
         int n = matrix1.length;
-        int[][] result = new int[n][n];
 
         // initialize matrices.
         // X11 == start i: 0, start j: 0
@@ -50,28 +49,67 @@ public class Matrix {
         // X22 == start i: n/2, start j: n/2
 
 //      M1 = mult(add(X11, X22), add(Y11, Y22));
-        int[][] M1 = multiplyNaive(add(matrix1, 0, 0, matrix2, n / 2, n / 2), add(matrix2, 0, 0, matrix2, n / 2, n / 2));
+        int[][] M1 = multiplyNaive(addQuad(matrix1, 0, 0, matrix2, n / 2, n / 2), addQuad(matrix2, 0, 0, matrix2, n / 2, n / 2));
 //
 //      M2 = mult(add(X21, X22), Y11);
-        int[][] M2 = multiplyNaive(add(matrix1, n / 2, 0, matrix1, n / 2, n / 2), matrix2, 0, 0);
+        int[][] M2 = multiplyNaive(addQuad(matrix1, n / 2, 0, matrix1, n / 2, n / 2), matrix2, 0, 0);
 
 //      M3 = mult(X11, sub(Y12, Y22));
-        int[][] M3 = multiplyNaive(matrix1, 0, 0, sub(matrix2, 0, n / 2, matrix2, n / 2, n / 2));
+        int[][] M3 = multiplyNaive(matrix1, 0, 0, subQuad(matrix2, 0, n / 2, matrix2, n / 2, n / 2));
 
 //      M4 = mult(X22, sub(Y21, Y11));
-        int[][] M4 = multiplyNaive(matrix1, n / 2, n / 2, sub(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
+        int[][] M4 = multiplyNaive(matrix1, n / 2, n / 2, subQuad(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
 
 //      M5 = mult(add(X11, X12), Y22);
-        int[][] M5 = multiplyNaive(add(matrix1, 0, 0, matrix1, 0, n / 2), matrix2, n / 2, n / 2);
+        int[][] M5 = multiplyNaive(addQuad(matrix1, 0, 0, matrix1, 0, n / 2), matrix2, n / 2, n / 2);
 
 //      M6 = mult(sub(X21, X11), add(Y11, Y12));
-        int[][] M6 = multiplyNaive(sub(matrix1, n / 2, 0, matrix1, 0, 0), add(matrix2, 0, 0, matrix2, 0, n / 2));
+        int[][] M6 = multiplyNaive(subQuad(matrix1, n / 2, 0, matrix1, 0, 0), addQuad(matrix2, 0, 0, matrix2, 0, n / 2));
 
 //      M7 = mult(sub(X12, X22), add(Y21, Y22));
-        int[][] M7 = multiplyNaive(sub(matrix1, 0, n / 2, matrix1, n / 2, n / 2), add(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
+        int[][] M7 = multiplyNaive(subQuad(matrix1, 0, n / 2, matrix1, n / 2, n / 2), addQuad(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
 
-        //TODO: do the second half a Strassen
-        return matrix1;
+        int[][] C11 = sub(add(M1, M4), add(M5, M7));
+        int[][] C21 = add(M2, M4);
+        int[][] C12 = add(M3, M5);
+        int[][] C22 = add(sub(M1, M2),add(M3, M6));
+
+        // TODO: implement a join method
+        return join(C11, C21, C12, C22);;
+    }
+
+    /**
+     *
+     * @param mat1  the first NxN matrix to add
+     * @param mat2  the second NxN matrix to add
+     * @return
+     */
+    public static int[][] add(int[][] mat1, int[][] mat2){
+        int n = mat1.length;
+        int[][] result = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                result[i][j] = mat1[i][j] + mat2[i][j];
+            }
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param mat1 the first NxN matrix to subtract
+     * @param mat2 the second NxN matrix to subtract
+     * @return
+     */
+    public static int[][] sub(int[][] mat1, int[][] mat2){
+        int n = mat1.length;
+        int[][] result = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                result[i][j] = mat1[i][j] - mat2[i][j];
+            }
+        }
+        return result;
     }
 
     /**
@@ -85,7 +123,7 @@ public class Matrix {
      * @param i2      the starting i value for matrix2
      * @param j2      the starting i value for matrix2
      **/
-    public static int[][] add(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
+    public static int[][] addQuad(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
         // TODO: run som manual tests on this method to verify its correctness
         int n = matrix1.length;
         int[][] result = new int[n / 2][n / 2];
@@ -108,7 +146,7 @@ public class Matrix {
      * @param i2      the starting i value for matrix2
      * @param j2      the starting i value for matrix2
      **/
-    public static int[][] sub(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
+    public static int[][] subQuad(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
         // TODO: run som manual tests on this method to verify its correctness
         int n = matrix1.length;
         int[][] result = new int[n / 2][n / 2];
@@ -229,9 +267,9 @@ public class Matrix {
     private static String csvify(int[] arr) {
         String str = "";
         for (int i = 0; i < arr.length - 1; i++) {
-            str += arr[i] + ",";
+            str += ("" + arr[i] + ",");
         }
-        str += arr[arr.length - 1];
+        str += "" + arr[arr.length - 1];
         return str;
     }
 
