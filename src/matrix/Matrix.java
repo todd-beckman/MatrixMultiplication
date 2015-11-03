@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Matrix {
-    static final int INITIAL_SIZE = 5;
+    static final int INITIAL_SIZE = 10;
     static final int SIZE_INCREMENT_PER_RUN = 5;
-    static final int MINIMUM = -10;
-    static final int MAXIMUM = 10;
+    static final int MINIMUM = -5;
+    static final int MAXIMUM = 5;
     static final int RUNS = 100;
     static final int TRIALS_PER_RUN = 10;
 
@@ -32,132 +32,92 @@ public class Matrix {
     }
 
     /**
-     * Multiplies two matrices together using the Stassen method.
+     * Multiplies two matrices together using the divide and conquer method.
      *
      * @param matrix1 The first matrix to multiply
      * @param matrix2 The second matrix to multiply
      * @return The result of the multiplication
      */
-    public static int[][] multiplyStrassen(int[][] matrix1, int[][] matrix2) {
-        // TODO: augment multiplyNaive or make a new multiply method to take in starting i and j values
-        int n = matrix1.length;
-
-        // initialize matrices.
-        // X11 == start i: 0, start j: 0
-        // X12 == start i: 0, start j: n/2
-        // X21 == start i: n/2, start j: 0
-        // X22 == start i: n/2, start j: n/2
-
-//      M1 = mult(add(X11, X22), add(Y11, Y22));
-        int[][] M1 = multiplyNaive(addQuad(matrix1, 0, 0, matrix2, n / 2, n / 2), addQuad(matrix2, 0, 0, matrix2, n / 2, n / 2));
-//
-//      M2 = mult(add(X21, X22), Y11);
-        int[][] M2 = multiplyNaive(addQuad(matrix1, n / 2, 0, matrix1, n / 2, n / 2), matrix2, 0, 0);
-
-//      M3 = mult(X11, sub(Y12, Y22));
-        int[][] M3 = multiplyNaive(matrix1, 0, 0, subQuad(matrix2, 0, n / 2, matrix2, n / 2, n / 2));
-
-//      M4 = mult(X22, sub(Y21, Y11));
-        int[][] M4 = multiplyNaive(matrix1, n / 2, n / 2, subQuad(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
-
-//      M5 = mult(add(X11, X12), Y22);
-        int[][] M5 = multiplyNaive(addQuad(matrix1, 0, 0, matrix1, 0, n / 2), matrix2, n / 2, n / 2);
-
-//      M6 = mult(sub(X21, X11), add(Y11, Y12));
-        int[][] M6 = multiplyNaive(subQuad(matrix1, n / 2, 0, matrix1, 0, 0), addQuad(matrix2, 0, 0, matrix2, 0, n / 2));
-
-//      M7 = mult(sub(X12, X22), add(Y21, Y22));
-        int[][] M7 = multiplyNaive(subQuad(matrix1, 0, n / 2, matrix1, n / 2, n / 2), addQuad(matrix2, n / 2, 0, matrix2, n / 2, n / 2));
-
-        int[][] C11 = sub(add(M1, M4), add(M5, M7));
-        int[][] C21 = add(M2, M4);
-        int[][] C12 = add(M3, M5);
-        int[][] C22 = add(sub(M1, M2),add(M3, M6));
-
-        // TODO: implement a join method
-        return join(C11, C21, C12, C22);;
+    public static int[][] multiplyDivideAndConquer(int[][] matrix1, int[][] matrix2) {
+        //  Initialize solution array
+        int[][] solution = new int[matrix1.length][matrix2.length];
+        
+        //  The low and high of the array.
+        int n = matrix1.length - 1;
+        
+        //  Do the multiplication on the entire range
+        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, 0, n, 0, n);
+        
+        //  Return solution array
+        return solution;
     }
+    private static void multiplyDivideAndConquerHelper(
+            int[][] solution, int[][] matrix1, int[][] matrix2,
+            int low1, int high1, int low2, int high2) {
 
-    /**
-     *
-     * @param mat1  the first NxN matrix to add
-     * @param mat2  the second NxN matrix to add
-     * @return
-     */
-    public static int[][] add(int[][] mat1, int[][] mat2){
-        int n = mat1.length;
-        int[][] result = new int[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                result[i][j] = mat1[i][j] + mat2[i][j];
+        if (low1 == high1) {
+                //  Base case: Looking at a single row from the first and a single column from the second
+                //  Find the dot product of this pair
+                if (low2 == high2) {
+                    solution[low1][low2] = multiplyDivideAndConquerHelperAddition(
+                            matrix1, matrix2, low1, low2, 0, solution.length - 1);
+                
+            }
+            else {
+                //  split the second matrix
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        low1, low1, low2, (low2 + high2) / 2);
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        low1, low1, (low2 + high2) / 2 + 1, high2);
             }
         }
-        return result;
-    }
-
-    /**
-     *
-     * @param mat1 the first NxN matrix to subtract
-     * @param mat2 the second NxN matrix to subtract
-     * @return
-     */
-    public static int[][] sub(int[][] mat1, int[][] mat2){
-        int n = mat1.length;
-        int[][] result = new int[n][n];
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                result[i][j] = mat1[i][j] - mat2[i][j];
+        else {
+            //  low1 and high1 are guaranteed not to be equal
+            if (low2 == high2) {
+                //  Split the first matrix
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        low1, (low1 + high1) / 2, low2, low2);
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        (low1 + high1) / 2 + 1, high1, low2, low2);
+            }
+            //  Nothing is equal so split everything
+            else {
+                //  top half of first, splitting second into halves
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        low1, (low1 + high1) / 2, low2, (low2 + high2) / 2);
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        low1, (low1 + high1) / 2, (low2 + high2) / 2 + 1, high2);
+                
+                //  bottom half, splitting second into halves
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        (low1 + high1) / 2 + 1, high1, low2, (low2 + high2) / 2);
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
+                        (low1 + high1) / 2 + 1, high1, (low2 + high2) / 2 + 1, high2);
             }
         }
-        return result;
     }
-
-    /**
-     * Both entire NxN matrices are passed in.  The passed in i's and j's are
-     * the beginning of one of the four quadrants (e.g. 0,0; 0,n/2; n/2,0; or n/2,n/2).
-     *
-     * @param matrix1 the first matrix to add
-     * @param i1      the starting i value for matrix1
-     * @param j1      the starting j value for matrix1
-     * @param matrix2 the second matrix to add
-     * @param i2      the starting i value for matrix2
-     * @param j2      the starting i value for matrix2
-     **/
-    public static int[][] addQuad(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
-        // TODO: run som manual tests on this method to verify its correctness
-        int n = matrix1.length;
-        int[][] result = new int[n / 2][n / 2];
-        for (int i = 0; i1 < (i1 + n / 2); i++) {
-            for (int j = 0; j1 < (j1 + n / 2); j++) {
-                result[i][j] = matrix1[i1 + i][j1 + j] + matrix2[i2 + i][j2 + j];
-            }
+    private static int multiplyDivideAndConquerHelperAddition(
+            int[][] matrix1, int[][] matrix2,
+            int i, int j, int low, int high) {
+        
+        //  Base case: Looking at one element
+        if (low == high) {
+            int s = matrix1[i][low] * matrix2[low][j];
+            //System.out.println(matrix1[i][low] + " * " + matrix2[low][j] + " = " + s);
+            return s;
         }
-        return result;
+        //  Find the left half of the dot product of this row/column pair
+        int left = multiplyDivideAndConquerHelperAddition(
+                matrix1, matrix2, i, j, low, (low + high) / 2);
+        
+        //  Find the right half of the dot product of this row/column pair
+        int right = multiplyDivideAndConquerHelperAddition(
+                matrix1, matrix2, i, j, (low + high) / 2 + 1, high);
+        
+        //  Add the two halves of the dot product
+        return left + right;
     }
-
-    /**
-     * Both entire NxN matrices are passed in.  The passed in i's and j's are
-     * the beginning of one of the four quadrants (e.g. 0,0; 0,n/2; n/2,0; or n/2,n/2).
-     *
-     * @param matrix1 the first matrix to subtract
-     * @param i1      the starting i value for matrix1
-     * @param j1      the starting j value for matrix1
-     * @param matrix2 the second matrix to subtract
-     * @param i2      the starting i value for matrix2
-     * @param j2      the starting i value for matrix2
-     **/
-    public static int[][] subQuad(int[][] matrix1, int i1, int j1, int[][] matrix2, int i2, int j2) {
-        // TODO: run som manual tests on this method to verify its correctness
-        int n = matrix1.length;
-        int[][] result = new int[n / 2][n / 2];
-        for (int i = 0; i1 < (i1 + n / 2); i++) {
-            for (int j = 0; j1 < (j1 + n / 2); j++) {
-                result[i][j] = matrix1[i1 + i][j1 + j] + matrix2[i2 + i][j2 + j];
-            }
-        }
-        return result;
-    }
-
+    
     /**
      * Builds a square matrix of size nxn filled with components randomly
      * between min and max
@@ -171,7 +131,7 @@ public class Matrix {
         int[][] matrix = new int[n][n];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                matrix[i][j] = (int)(Math.random() * max) + min;
+                matrix[i][j] = (int)(Math.random() * (max - min)) + min;
             }
         }
         return matrix;
@@ -241,7 +201,7 @@ public class Matrix {
 
                 // Time the second method
                 long start2 = System.currentTimeMillis();
-                multiplyStrassen(matrixA, matrixB);
+                multiplyDivideAndConquer(matrixA, matrixB);
                 long end2 = System.currentTimeMillis();
                 times2[i] += (int)(end2 - start2);
             }
@@ -254,7 +214,7 @@ public class Matrix {
         try {
             FileWriter writer = new FileWriter(outputFile);
             writer.write(
-                            "Size," + csvify(sizes) + "\n" + "Naive," + csvify(times1) + "\n" + "Strassen," + csvify(times2));
+                            "Size," + csvify(sizes) + "\n" + "Naive," + csvify(times1) + "\n" + "Div/Conquer," + csvify(times2));
             writer.close();
         } catch (IOException e) {
             System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
@@ -274,7 +234,7 @@ public class Matrix {
     }
 
     public static void main(String[] args) {
-        // runTrials("output.csv");
+        runTrials("output.csv");
 
         // Test environment first
         int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
@@ -282,5 +242,6 @@ public class Matrix {
         printMatrix(matrixA);
         printMatrix(matrixB);
         printMatrix(multiplyNaive(matrixA, matrixB));
+        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
     }
 }
