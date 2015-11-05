@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Matrix {
-    static final int INITIAL_SIZE = 10;
-    static final int SIZE_INCREMENT_PER_RUN = 5;
+    static final int INITIAL_SIZE = 100;
+    static final int SIZE_INCREMENT_PER_RUN = 10;
     static final int MINIMUM = -5;
     static final int MAXIMUM = 5;
-    static final int RUNS = 100;
-    static final int TRIALS_PER_RUN = 10;
+    static final int RUNS = 3;
+    static final int TRIALS_PER_RUN = 5;
 
     /**
      * Multiplies two matrices together using the naive approach.
@@ -55,47 +55,54 @@ public class Matrix {
             int[][] solution, int[][] matrix1, int[][] matrix2,
             int low1, int high1, int low2, int high2) {
 
-        if (low1 == high1) {
-                //  Base case: Looking at a single row from the first and a single column from the second
-                //  Find the dot product of this pair
-                if (low2 == high2) {
-                    solution[low1][low2] = multiplyDivideAndConquerHelperAddition(
-                            matrix1, matrix2, low1, low2, 0, solution.length - 1);
-                
-            }
-            else {
-                //  split the second matrix
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        low1, low1, low2, (low2 + high2) / 2);
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        low1, low1, (low2 + high2) / 2 + 1, high2);
-            }
+        if (low1 == high1 && low2 == high2) {
+            //  Base case: Looking at a single row from the first and a single column from the second
+            //  Find the dot product of this pair
+            solution[low1][low2] = multiplyDivideAndConquerHelperAddition(
+                    matrix1, matrix2, low1, low2, 0, solution.length - 1);
+            return;
         }
-        else {
-            //  low1 and high1 are guaranteed not to be equal
-            if (low2 == high2) {
-                //  Split the first matrix
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        low1, (low1 + high1) / 2, low2, low2);
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        (low1 + high1) / 2 + 1, high1, low2, low2);
-            }
-            //  Nothing is equal so split everything
-            else {
-                //  top half of first, splitting second into halves
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        low1, (low1 + high1) / 2, low2, (low2 + high2) / 2);
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        low1, (low1 + high1) / 2, (low2 + high2) / 2 + 1, high2);
-                
-                //  bottom half, splitting second into halves
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        (low1 + high1) / 2 + 1, high1, low2, (low2 + high2) / 2);
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2,
-                        (low1 + high1) / 2 + 1, high1, (low2 + high2) / 2 + 1, high2);
-            }
+
+        int middle1 = (low1 + high1) / 2;
+        int middle2 = (low2 + high2) / 2;
+
+        //  Top right
+        Thread t1 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2);
+        
+        //  Bottom left
+        Thread t2 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2);
+            
+        //  Bottom right
+        Thread t3 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2);
+
+        //  Top left (let this be the current thread's recursive call because it is the only one
+        //          that is guaranteed to be called at every iteration (due to the bounds of others
+        //          causing problems)
+        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2);
+
+        
+        try{
+            t1.join();
+            t2.join();
+            t3.join();
         }
+        catch (InterruptedException e) {}
     }
+    
+    private static Thread threadedDivideAndConquerHelper(
+            int[][] solution, int[][] matrix1, int[][] matrix2,
+            int low1, int high1, int low2, int high2){
+        Thread t = (new Thread() {
+            public void run() {
+                if (low1 <= high1 && low2 <= high2) {
+                    multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, high1, low2, high2);
+                }
+            }
+        });
+        t.start();
+        return t;
+    }
+    
     private static int multiplyDivideAndConquerHelperAddition(
             int[][] matrix1, int[][] matrix2,
             int i, int j, int low, int high) {
@@ -180,6 +187,7 @@ public class Matrix {
 
         // For each run
         for (int i = 0; i < RUNS; i++) {
+            System.out.print("\nStarting run " + i + ". Trials run: ");
             // Find how long this run's size is going to be
             sizes[i] = INITIAL_SIZE + i * SIZE_INCREMENT_PER_RUN;
 
@@ -189,6 +197,7 @@ public class Matrix {
 
             // For each trial
             for (int j = 0; j < TRIALS_PER_RUN; j++) {
+                System.out.print("|");
                 // Generate matrices to be multiplied
                 int[][] matrixA = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
                 int[][] matrixB = generateMatrix(sizes[i], MINIMUM, MAXIMUM);
@@ -219,8 +228,8 @@ public class Matrix {
         } catch (IOException e) {
             System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
             System.out.println("Sizes per run:  " + csvify(sizes));
-            System.out.println("Method 1 times: " + csvify(sizes));
-            System.out.println("Method 2 times: " + csvify(sizes));
+            System.out.println("Method 1 times: " + csvify(times1));
+            System.out.println("Method 2 times: " + csvify(times2));
         }
     }
 
@@ -237,11 +246,11 @@ public class Matrix {
         runTrials("output.csv");
 
         // Test environment first
-        int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
-        int[][] matrixB = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
-        printMatrix(matrixA);
-        printMatrix(matrixB);
-        printMatrix(multiplyNaive(matrixA, matrixB));
-        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
+//        int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
+//        int[][] matrixB = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
+//        printMatrix(matrixA);
+//        printMatrix(matrixB);
+//        printMatrix(multiplyNaive(matrixA, matrixB));
+//        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
     }
 }
