@@ -5,12 +5,41 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Matrix {
+    /**
+     * The size of the first matrices during the first run of the experiment.
+     */
     static final int INITIAL_SIZE = 100;
-    static final int SIZE_INCREMENT_PER_RUN = 10;
-    static final int MINIMUM = -5;
-    static final int MAXIMUM = 5;
-    static final int RUNS = 3;
-    static final int TRIALS_PER_RUN = 5;
+    
+    /**
+     * The size increase of the matrices when stepping up to higher runs.
+     */
+    static final int SIZE_INCREMENT_PER_RUN = INITIAL_SIZE;
+    
+    /**
+     * The inclusive lower bound on the generated matrix cell values
+     */
+    static final int MINIMUM = -10;
+    
+    /**
+     * The exclusive upper bound on the generated matrix cell values
+     */
+    static final int MAXIMUM = 10;
+    
+    /**
+     * Number of test runs to make, incrementing by SIZE_INCREMENT_PER_RUN every time
+     */
+    static final int RUNS = 50;
+    
+    /**
+     * Number of trials at each run, where the average of this many trials is recorded in the output.
+     */
+    static final int TRIALS_PER_RUN = 10;
+    
+    /**
+     * The number of recursive calls in the Divide and Conquer method to make recursively. The log of this number
+     * is the number of threads that will be opened in parallel. Only the dividing and conquering part is recursive.
+     */
+    static final int DEPTH_OF_PARALLEL_RECURSION = 2;
 
     /**
      * Multiplies two matrices together using the naive approach.
@@ -46,14 +75,16 @@ public class Matrix {
         int n = matrix1.length - 1;
         
         //  Do the multiplication on the entire range
-        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, 0, n, 0, n);
+        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, 0, n, 0, n, 0);
         
         //  Return solution array
         return solution;
     }
     private static void multiplyDivideAndConquerHelper(
             int[][] solution, int[][] matrix1, int[][] matrix2,
-            int low1, int high1, int low2, int high2) {
+            int low1, int high1, int low2, int high2,   //  keep track of the bounds on the matrices
+            int depth                                   //  keep track of how deep this recursion is to determine
+            ) {
 
         if (low1 == high1 && low2 == high2) {
             //  Base case: Looking at a single row from the first and a single column from the second
@@ -65,37 +96,56 @@ public class Matrix {
 
         int middle1 = (low1 + high1) / 2;
         int middle2 = (low2 + high2) / 2;
-
-        //  Top right
-        Thread t1 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2);
         
-        //  Bottom left
-        Thread t2 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2);
+        if (depth < DEPTH_OF_PARALLEL_RECURSION) {
+            //  Top right
+            Thread t1 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
             
-        //  Bottom right
-        Thread t3 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2);
-
-        //  Top left (let this be the current thread's recursive call because it is the only one
-        //          that is guaranteed to be called at every iteration (due to the bounds of others
-        //          causing problems)
-        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2);
-
-        
-        try{
-            t1.join();
-            t2.join();
-            t3.join();
+            //  Bottom left
+            Thread t2 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2 + 1, depth + 1);
+                
+            //  Bottom right
+            Thread t3 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
+    
+            //  Top left (let this be the current thread's recursive call because it is the only one
+            //          that is guaranteed to be called at every iteration (due to the bounds of others
+            //          causing problems)
+            multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
+    
+            try{
+                t1.join();
+                t2.join();
+                t3.join();
+            }
+            catch (InterruptedException e) {}
         }
-        catch (InterruptedException e) {}
+        else {
+            if (middle2 < high2) {
+                //  Top right
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
+            }
+            if (middle1 < high1) {
+                //  Bottom left
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2, depth + 1);
+            }
+            
+            if (middle1 < high1 && middle2 < high2) {
+                //  Bottom right
+                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
+            }
+    
+            //  Top left
+            multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
+        }
     }
     
     private static Thread threadedDivideAndConquerHelper(
             int[][] solution, int[][] matrix1, int[][] matrix2,
-            int low1, int high1, int low2, int high2){
+            int low1, int high1, int low2, int high2, int depth){
         Thread t = (new Thread() {
             public void run() {
                 if (low1 <= high1 && low2 <= high2) {
-                    multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, high1, low2, high2);
+                    multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, high1, low2, high2, depth);
                 }
             }
         });
@@ -216,8 +266,8 @@ public class Matrix {
             }
 
             // Find the average time per trial
-            times1[i] /= TRIALS_PER_RUN;
-            times2[i] /= TRIALS_PER_RUN;
+            times1[i] /= (long)TRIALS_PER_RUN;
+            times2[i] /= (long)TRIALS_PER_RUN;
         }
 
         try {
@@ -241,9 +291,13 @@ public class Matrix {
         str += "" + arr[arr.length - 1];
         return str;
     }
+    
+    public static String nameFile() {
+        return RUNS + "-runs__" + INITIAL_SIZE + "-initial__" + SIZE_INCREMENT_PER_RUN + "-increment.csv";
+    }
 
     public static void main(String[] args) {
-        runTrials("output.csv");
+        runTrials(nameFile());
 
         // Test environment first
 //        int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
