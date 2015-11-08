@@ -28,18 +28,18 @@ public class Matrix {
     /**
      * Number of test runs to make, incrementing by SIZE_INCREMENT_PER_RUN every time
      */
-    static final int RUNS = 50;
+    static final int RUNS = 10;
     
     /**
      * Number of trials at each run, where the average of this many trials is recorded in the output.
      */
-    static final int TRIALS_PER_RUN = 10;
+    static final int TRIALS_PER_RUN = 5;
     
     /**
      * The number of recursive calls in the Divide and Conquer method to make recursively. The log of this number
      * is the number of threads that will be opened in parallel. Only the dividing and conquering part is recursive.
      */
-    static final int DEPTH_OF_PARALLEL_RECURSION = 2;
+    static final int DEPTH_OF_PARALLEL_RECURSION = 0;
 
     /**
      * Multiplies two matrices together using the naive approach.
@@ -61,13 +61,14 @@ public class Matrix {
     }
 
     /**
-     * Multiplies two matrices together using the divide and conquer method.
+     * Multiplies two matrices together using the naive method, except in span(log(n)) time
+     * using parallel programming.
      *
      * @param matrix1 The first matrix to multiply
      * @param matrix2 The second matrix to multiply
      * @return The result of the multiplication
      */
-    public static int[][] multiplyDivideAndConquer(int[][] matrix1, int[][] matrix2) {
+    public static int[][] multiplyNaiveParallel(int[][] matrix1, int[][] matrix2) {
         //  Initialize solution array
         int[][] solution = new int[matrix1.length][matrix2.length];
         
@@ -75,12 +76,24 @@ public class Matrix {
         int n = matrix1.length - 1;
         
         //  Do the multiplication on the entire range
-        multiplyDivideAndConquerHelper(solution, matrix1, matrix2, 0, n, 0, n, 0);
+        multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, 0, n, 0, n, 0);
         
         //  Return solution array
         return solution;
     }
-    private static void multiplyDivideAndConquerHelper(
+    
+    /**
+     * Recursively splits the first matrix by row and the second matrix by column
+     * @param solution The solution matrix in progress
+     * @param matrix1 The first operand matrix
+     * @param matrix2 The second operand matrix
+     * @param low1 The lower bound on the left matrix range of rows
+     * @param high1 The upper bound on the right matrix range of rows
+     * @param low2 The lower bound on the right matrix range of columns
+     * @param high2 The higher bound on the right matrix range of columns
+     * @param depth The current recursion depth, used to determine whether to spawn new threads
+     */
+    private static void multiplyNaiveParallelHelperSplitting(
             int[][] solution, int[][] matrix1, int[][] matrix2,
             int low1, int high1, int low2, int high2,   //  keep track of the bounds on the matrices
             int depth                                   //  keep track of how deep this recursion is to determine
@@ -89,7 +102,7 @@ public class Matrix {
         if (low1 == high1 && low2 == high2) {
             //  Base case: Looking at a single row from the first and a single column from the second
             //  Find the dot product of this pair
-            solution[low1][low2] = multiplyDivideAndConquerHelperAddition(
+            solution[low1][low2] = multiplyNaiveHelperAddition(
                     matrix1, matrix2, low1, low2, 0, solution.length - 1);
             return;
         }
@@ -99,18 +112,18 @@ public class Matrix {
         
         if (depth < DEPTH_OF_PARALLEL_RECURSION) {
             //  Top right
-            Thread t1 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
+            Thread t1 = threadedNaiveMultiplyHelperSplitting(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
             
             //  Bottom left
-            Thread t2 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2 + 1, depth + 1);
+            Thread t2 = threadedNaiveMultiplyHelperSplitting(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2 + 1, depth + 1);
                 
             //  Bottom right
-            Thread t3 = threadedDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
+            Thread t3 = threadedNaiveMultiplyHelperSplitting(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
     
             //  Top left (let this be the current thread's recursive call because it is the only one
             //          that is guaranteed to be called at every iteration (due to the bounds of others
             //          causing problems)
-            multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
+            multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
     
             try{
                 t1.join();
@@ -122,30 +135,42 @@ public class Matrix {
         else {
             if (middle2 < high2) {
                 //  Top right
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
+                multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, low1, middle1, middle2 + 1, high2, depth + 1);
             }
             if (middle1 < high1) {
                 //  Bottom left
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2, depth + 1);
+                multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, middle1 + 1, high1, low2, middle2, depth + 1);
             }
             
             if (middle1 < high1 && middle2 < high2) {
                 //  Bottom right
-                multiplyDivideAndConquerHelper(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
+                multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, middle1 + 1, high1, middle2 + 1, high2, depth + 1);
             }
     
             //  Top left
-            multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
+            multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, low1, middle1, low2, middle2, depth + 1);
         }
     }
-    
-    private static Thread threadedDivideAndConquerHelper(
+
+    /**
+     * Starts a new thread which will recursively split the first matrix by row and the second matrix by column
+     * @param solution The solution matrix in progress
+     * @param matrix1 The first operand matrix
+     * @param matrix2 The second operand matrix
+     * @param low1 The lower bound on the left matrix range of rows
+     * @param high1 The upper bound on the right matrix range of rows
+     * @param low2 The lower bound on the right matrix range of columns
+     * @param high2 The higher bound on the right matrix range of columns
+     * @param depth The current recursion depth, used to determine whether to spawn new threads
+     * @return The thread instance which has been started
+     */
+    private static Thread threadedNaiveMultiplyHelperSplitting(
             int[][] solution, int[][] matrix1, int[][] matrix2,
             int low1, int high1, int low2, int high2, int depth){
         Thread t = (new Thread() {
             public void run() {
                 if (low1 <= high1 && low2 <= high2) {
-                    multiplyDivideAndConquerHelper(solution, matrix1, matrix2, low1, high1, low2, high2, depth);
+                    multiplyNaiveParallelHelperSplitting(solution, matrix1, matrix2, low1, high1, low2, high2, depth);
                 }
             }
         });
@@ -153,22 +178,31 @@ public class Matrix {
         return t;
     }
     
-    private static int multiplyDivideAndConquerHelperAddition(
+    /**
+     * Performs the dot product in the ith row of matrix 1 and the jth column of matrix 2 in the specified range
+     * @param matrix1 s
+     * @param matrix2
+     * @param i
+     * @param j
+     * @param low
+     * @param high
+     * @return
+     */
+    private static int multiplyNaiveHelperAddition(
             int[][] matrix1, int[][] matrix2,
             int i, int j, int low, int high) {
         
-        //  Base case: Looking at one element
+        //  Base case: Looking at one element.
         if (low == high) {
             int s = matrix1[i][low] * matrix2[low][j];
-            //System.out.println(matrix1[i][low] + " * " + matrix2[low][j] + " = " + s);
             return s;
         }
         //  Find the left half of the dot product of this row/column pair
-        int left = multiplyDivideAndConquerHelperAddition(
+        int left = multiplyNaiveHelperAddition(
                 matrix1, matrix2, i, j, low, (low + high) / 2);
         
         //  Find the right half of the dot product of this row/column pair
-        int right = multiplyDivideAndConquerHelperAddition(
+        int right = multiplyNaiveHelperAddition(
                 matrix1, matrix2, i, j, (low + high) / 2 + 1, high);
         
         //  Add the two halves of the dot product
@@ -232,8 +266,8 @@ public class Matrix {
 
         // Keep track of the times for each run
         // One set of times per method
-        int[] times1 = new int[RUNS];
-        int[] times2 = new int[RUNS];
+        long[] times1 = new long[RUNS];
+        long[] times2 = new long[RUNS];
 
         // For each run
         for (int i = 0; i < RUNS; i++) {
@@ -256,31 +290,40 @@ public class Matrix {
                 long start1 = System.currentTimeMillis();
                 multiplyNaive(matrixA, matrixB);
                 long end1 = System.currentTimeMillis();
-                times1[i] += (int)(end1 - start1);
+                times1[i] += end1 - start1;
 
                 // Time the second method
                 long start2 = System.currentTimeMillis();
-                multiplyDivideAndConquer(matrixA, matrixB);
+                multiplyNaiveParallel(matrixA, matrixB);
                 long end2 = System.currentTimeMillis();
-                times2[i] += (int)(end2 - start2);
+                times2[i] += end2 - start2;
             }
 
             // Find the average time per trial
-            times1[i] /= (long)TRIALS_PER_RUN;
-            times2[i] /= (long)TRIALS_PER_RUN;
+            times1[i] /= TRIALS_PER_RUN;
+            times2[i] /= TRIALS_PER_RUN;
         }
 
         try {
             FileWriter writer = new FileWriter(outputFile);
-            writer.write(
-                            "Size," + csvify(sizes) + "\n" + "Naive," + csvify(times1) + "\n" + "Div/Conquer," + csvify(times2));
+            writer.write("Size," + csvify(sizes) + "\n" + "Naive," + csvify(times1) + "\n" + "NaiveParallel," + csvify(times2));
             writer.close();
+            System.out.println("\nWrote to " + outputFile);
         } catch (IOException e) {
             System.out.println("Failed to write to " + outputFile + ". Writing to console instead.\n");
             System.out.println("Sizes per run:  " + csvify(sizes));
             System.out.println("Method 1 times: " + csvify(times1));
             System.out.println("Method 2 times: " + csvify(times2));
         }
+    }
+
+    private static String csvify(long[] arr) {
+        String str = "";
+        for (int i = 0; i < arr.length - 1; i++) {
+            str += ("" + arr[i] + ",");
+        }
+        str += "" + arr[arr.length - 1];
+        return str;
     }
 
     private static String csvify(int[] arr) {
@@ -293,18 +336,20 @@ public class Matrix {
     }
     
     public static String nameFile() {
-        return RUNS + "-runs__" + INITIAL_SIZE + "-initial__" + SIZE_INCREMENT_PER_RUN + "-increment.csv";
+        return RUNS + "-runs__" + INITIAL_SIZE + "-initial__" + SIZE_INCREMENT_PER_RUN + "-increment__"
+                + DEPTH_OF_PARALLEL_RECURSION + "-parallel-depth.csv";
     }
 
     public static void main(String[] args) {
-        runTrials(nameFile());
+//        runTrials(nameFile());
 
         // Test environment first
-//        int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
-//        int[][] matrixB = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
-//        printMatrix(matrixA);
-//        printMatrix(matrixB);
-//        printMatrix(multiplyNaive(matrixA, matrixB));
+        int[][] matrixA = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
+        int[][] matrixB = generateMatrix(INITIAL_SIZE, MINIMUM, MAXIMUM);
+        printMatrix(matrixA);
+        printMatrix(matrixB);
+        printMatrix(multiplyNaive(matrixA, matrixB));
+        //  TODO
 //        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
     }
 }
