@@ -8,7 +8,7 @@ public class Matrix {
     /**
      * The size of the first matrices during the first run of the experiment.
      */
-    static final int INITIAL_SIZE = 16;
+    static final int INITIAL_SIZE = 17;
     
     /**
      * The size increase of the matrices when stepping up to higher runs.
@@ -308,9 +308,15 @@ public class Matrix {
             matrices[1][i] = Arrays.copyOfRange(matrix[i], midcol, cols);
         }
 
-        for (int i = midrow; i < rows; i++) {
-            matrices[2][i - midrow] = Arrays.copyOfRange(matrix[i], 0, midcol);
-            matrices[3][i - midrow] = Arrays.copyOfRange(matrix[i], midcol, cols);
+        if (midcol < matrix[0].length) {    //  THIS SHOULD STOP IT
+            for (int i = midrow; i < rows; i++) {
+                //  WTF !!
+                System.out.println(midrow + " " + midcol + " " + matrix[i].length);
+                matrices[2][i - midrow] = 
+                        Arrays.copyOfRange(matrix[i], 0, midcol);
+                matrices[3][i - midrow] =
+                        Arrays.copyOfRange(matrix[i], midcol, cols);
+            }
         }
         
         return matrices;
