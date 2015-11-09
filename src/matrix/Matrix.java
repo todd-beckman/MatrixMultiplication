@@ -8,7 +8,7 @@ public class Matrix {
     /**
      * The size of the first matrices during the first run of the experiment.
      */
-    static final int INITIAL_SIZE = 100;
+    static final int INITIAL_SIZE = 16;
     
     /**
      * The size increase of the matrices when stepping up to higher runs.
@@ -210,6 +210,146 @@ public class Matrix {
     }
     
     /**
+     * Multiplies two matrices using the Divide and Conquer method
+     * @param matrix1 The first operand
+     * @param matrix2 The second operand
+     * @return The completed matrix
+     */
+    public static int[][] multiplyDivideAndConquer(int[][] matrix1, int[][] matrix2) {
+        int n = matrix1.length;
+        return multiplyDivideAndConquerHelper(new int[n][n], matrix1, matrix2);
+    }
+    
+    /**
+     * Is literally the stupidest code I have ever written. Use of this method is highly discouraged.
+     * In fact, I'm not even going to document what parameters are.
+     */
+    private static int[][] multiplyDivideAndConquerHelper(int[][] into, int[][] a, int[][] b) {
+        if (a.length == 0 || a[0].length == 0) {
+            return a;
+        }
+        if (b.length == 0 || b[0].length == 0) {
+            return b;
+        }
+        if (a.length == 1 && a[0].length == 1 && b.length == 1 && b[0].length == 1) {
+            into[0][0] = a[0][0] * b[0][0];
+            return into;
+        }
+        
+        //  Reluctantly allocate yet another matrix of memory
+        int[][] temp = new int[into.length][into[0].length];
+
+        //  Reluctantly split the matrices
+        int[][][] aSplit = splitMatrixInto4(a);
+        int[][][] bSplit = splitMatrixInto4(b);
+        int[][][] cSplit = splitMatrixInto4(into);
+        int[][][] tSplit = splitMatrixInto4(temp);
+
+        //  This algorithm is too terrible to be worthy of comments.
+        //  These occur in the same order as shown here: 
+        //  https://en.wikipedia.org/wiki/Matrix_multiplication_algorithm#Divide_and_conquer_algorithm
+        return multiplyDivideAndConquerHelperAddition(
+                join4Matrices(
+                        multiplyDivideAndConquerHelper(cSplit[0], aSplit[0], bSplit[0]),
+                        multiplyDivideAndConquerHelper(cSplit[1], aSplit[0], bSplit[1]),
+                        multiplyDivideAndConquerHelper(cSplit[2], aSplit[2], bSplit[0]),
+                        multiplyDivideAndConquerHelper(cSplit[3], aSplit[2], bSplit[1])),
+                join4Matrices(
+                        multiplyDivideAndConquerHelper(tSplit[0], aSplit[1], bSplit[2]),
+                        multiplyDivideAndConquerHelper(tSplit[1], aSplit[1], bSplit[3]),
+                        multiplyDivideAndConquerHelper(tSplit[2], aSplit[3], bSplit[2]),
+                        multiplyDivideAndConquerHelper(tSplit[3], aSplit[3], bSplit[3])));
+    }
+    
+    private static int[][] multiplyDivideAndConquerHelperAddition(int[][] left, int[][] right) {
+        if (left.length == 0 || left[0].length == 0) {
+            return left;
+        }
+        if (right.length == 0 || right[0].length == 0) {
+            return right;
+        }
+        if (left.length == 1 && left[0].length == 1 && right.length == 1 && right[0].length == 1) {
+            left[0][0] += right[0][0];
+            return left;
+        }
+
+        int[][][] leftSplit = splitMatrixInto4(left);
+        int[][][] rightSplit = splitMatrixInto4(right);
+
+        return join4Matrices(
+            multiplyDivideAndConquerHelperAddition(leftSplit[0], rightSplit[0]),
+            multiplyDivideAndConquerHelperAddition(leftSplit[1], rightSplit[1]),
+            multiplyDivideAndConquerHelperAddition(leftSplit[2], rightSplit[2]),
+            multiplyDivideAndConquerHelperAddition(leftSplit[3], rightSplit[3]));
+    }
+    
+    private static int[][][] splitMatrixInto4 (int[][] matrix) {
+        
+        //  Get the size
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        int[][][] matrices = new int[4][][];
+
+        
+        //  Get the bounds
+        int midrow = rows / 2;
+        int midcol = cols / 2;
+        int midrowb = rows - midrow;
+        int midcolb = cols - midcol;
+        
+
+        matrices[0] = new int[midrow][midcol];
+        matrices[1] = new int[midrow][midcolb];
+        matrices[2] = new int[midrowb][midcol];
+        matrices[3] = new int[midrowb][midcolb];
+
+        for (int i = 0; i < midrow; i++) {
+            matrices[0][i] = Arrays.copyOfRange(matrix[i], 0, midcol);
+            matrices[1][i] = Arrays.copyOfRange(matrix[i], midcol, cols);
+        }
+
+        for (int i = midrow; i < rows; i++) {
+            matrices[2][i - midrow] = Arrays.copyOfRange(matrix[i], 0, midcol);
+            matrices[3][i - midrow] = Arrays.copyOfRange(matrix[i], midcol, cols);
+        }
+        
+        return matrices;
+    }
+    
+    private static int[][] join4Matrices (int[][] a, int[][] b, int[][] c, int[][] d) {
+        
+        //  Get the bounds of the matrices
+        int rows = a.length + c.length;
+        int alen = (a.length == 0) ? 0 : a[0].length;
+        int blen = (b.length == 0) ? 0 : b[0].length;
+        int clen = (c.length == 0) ? 0 : c[0].length;
+        int dlen = (d.length == 0) ? 0 : d[0].length;
+        int[][] matrix = new int[rows][alen + blen];
+
+
+        for (int i = 0; i < a.length; i++) {
+            matrix[i] = new int[alen + blen];
+            if (0 < alen) {
+                System.arraycopy(a[i], 0, matrix[i], 0, alen);
+            }
+            if (0 < blen) {
+                System.arraycopy(b[i], 0, matrix[i], alen, blen);
+            }
+        }
+        for (int i = 0, j = i + alen; i < c.length; i++, j++) {
+            matrix[j] = new int[clen + dlen];
+            if (0 < clen) {
+                System.arraycopy(c[i], 0, matrix[j], 0, clen);
+            }
+            if (0 < dlen) {
+                System.arraycopy(d[i], 0, matrix[j], clen, dlen);
+            }
+        }
+
+        return matrix;
+    }
+    
+    /**
      * Builds a square matrix of size nxn filled with components randomly
      * between min and max
      *
@@ -349,7 +489,7 @@ public class Matrix {
         printMatrix(matrixA);
         printMatrix(matrixB);
         printMatrix(multiplyNaive(matrixA, matrixB));
-        //  TODO
-//        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
+//        //  TODO
+        printMatrix(multiplyDivideAndConquer(matrixA, matrixB));
     }
 }
